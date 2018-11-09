@@ -1,0 +1,61 @@
+{
+    "name": "pipeline1",
+    "properties": {
+        "activities": [
+            {
+                "name": "Until1",
+                "type": "Until",
+                "typeProperties": {
+                    "expression": {
+                        "value": "@equals('null', coalesce(variables('index'),  'null'))",
+                        "type": "Expression"
+                    },
+                    "activities": [
+                        {
+                            "name": "Fetch Page",
+                            "type": "WebActivity",
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "typeProperties": {
+                                "url": {
+                                    "value": "@concat('https://pelasne-samples.azurewebsites.net/api/paging?index=', variables('index'))",
+                                    "type": "Expression"
+                                },
+                                "method": "GET"
+                            }
+                        },
+                        {
+                            "name": "Set index to \"next\"",
+                            "type": "SetVariable",
+                            "dependsOn": [
+                                {
+                                    "activity": "Fetch Page",
+                                    "dependencyConditions": ["Succeeded"]
+                                }
+                            ],
+                            "typeProperties": {
+                                "variableName": "index",
+                                "value": {
+                                    "value": "@string(coalesce(activity('Fetch Page').output.next, 'null'))",
+                                    "type": "Expression"
+                                }
+                            }
+                        }
+                    ],
+                    "timeout": "7.00:00:00"
+                }
+            }
+        ],
+        "variables": {
+            "index": {
+                "type": "String",
+                "defaultValue": "0"
+            }
+        }
+    }
+}
